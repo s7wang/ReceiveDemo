@@ -21,8 +21,8 @@ class ShowTextureView (context: Context?, attrs: AttributeSet?) : TextureView(
     context!!, attrs
 ), TextureView.SurfaceTextureListener {
 
-    private lateinit var rtpReceiver:RtpReceiver
-    private lateinit var videoDecoder: VideoDecoder
+    private var rtpReceiver:RtpReceiver
+    private var videoDecoder: VideoDecoder
 
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
         Log.d(TAG, "onSurfaceTextureAvailable")
