@@ -48,7 +48,7 @@ class DataStatics:TimerTask() {
     override fun run() { //反馈控制信息
 
         var reportData = reportPacketEncode.makeReportPacket(delta, lossRateN, lossRateBase, lastSq)
-
+        //Log.i(TAG,"delta = $delta, lossRateN = $lossRateN, lossRateBase = $lossRateBase, lastSq = $lastSq ")
         socket.sendPacket(reportData, reportData.size)
     }
 

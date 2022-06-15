@@ -33,7 +33,8 @@ class RtpPacketDecode(width: Int, height: Int) {
          * 32			Timestamp									                        63
          * 64			SSRC identifier								                        95
          */
-        var fuHeaderLen = 12 // FU-Header长度为12字节
+        /** FU-Header长度为12字节 **/
+        var fuHeaderLen = 12
         val extension: Int = rtpData[0].toInt() and (1 shl 4) // X: 扩展为是否为1
         if (extension > 0) {
             // 计算扩展头的长度

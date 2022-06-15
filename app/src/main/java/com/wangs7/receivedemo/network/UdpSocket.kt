@@ -52,7 +52,10 @@ class UdpSocket(localPort_:Int, broadcast: Boolean):SetDestAddress {
             data[6] = timeStamp[2]
             data[7] = timeStamp[3]
 
-            if (inetAddress == null) return
+            if (inetAddress == null) {
+                Log.e(TAG, "inetAddress == null")
+                return
+            }
 
             sendPacket = DatagramPacket(data, 0, size, inetAddress, destPort)
             if (socket == null) {
@@ -60,8 +63,8 @@ class UdpSocket(localPort_:Int, broadcast: Boolean):SetDestAddress {
 //                socket!!.broadcast = false
                 Log.e(TAG,"Socket == null")
             }
-            Log.e(TAG, "reportsend++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             socket!!.send(sendPacket)
+            Log.e(TAG, "sendPacket+++++++++++++++++++++++++++++++++++++++++")
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -82,6 +85,7 @@ class UdpSocket(localPort_:Int, broadcast: Boolean):SetDestAddress {
         var ip = datagramPacket.address
         if (!ip.equals(receiveIp)) {
             receiveIp = ip
+            Log.e(TAG, "ip = ${ip.hostAddress}")
             destAddressSetter?.setAddress(ip, DEFAULT_PORT+1)
         }
 
