@@ -18,6 +18,14 @@ class RtpPacketDecode(width: Int, height: Int) {
     private var h264Len = 0
     private var h264Pos = 0
 
+    fun isBufferEmpty():Boolean {
+        return h264Len == 0
+    }
+
+    fun clearBuffer() {
+        h264Len = 0
+        h264Pos = -1
+    }
     /**
      * RTP解包H264
      *
@@ -34,29 +42,29 @@ class RtpPacketDecode(width: Int, height: Int) {
          * 64			SSRC identifier								                        95
          */
         /** FU-Header长度为12字节 **/
-        var fuHeaderLen = 12
+        var rtpHeaderLen = 12
         val extension: Int = rtpData[0].toInt() and (1 shl 4) // X: 扩展为是否为1
         if (extension > 0) {
             // 计算扩展头的长度
             val extLen: Int =
                 (rtpData[12].toInt() shl 24) + (rtpData[13].toInt() shl 16) + (rtpData[14].toInt() shl 8) + rtpData[15]
-            fuHeaderLen += (extLen + 1) * 4
+            rtpHeaderLen += (extLen + 1) * 4
         }
         // 解析FU-indicator
         val indicatorType =
-            (byteToInt(rtpData[fuHeaderLen]) and 0x1f).toByte() // 取出low 5 bit 则为FU-indicator type
-        val nri = (byteToInt(rtpData[fuHeaderLen]) shr 5 and 0x03).toByte() // 取出h2bit and h3bit
-        val f = (byteToInt(rtpData[fuHeaderLen]) shr 7).toByte() // 取出h1bit
+            (byteToInt(rtpData[rtpHeaderLen]) and 0x1f).toByte() // 取出low 5 bit 则为FU-indicator type
+        val nri = (byteToInt(rtpData[rtpHeaderLen]) shr 5 and 0x03).toByte() // 取出h2bit and h3bit
+        val f = (byteToInt(rtpData[rtpHeaderLen]) shr 7).toByte() // 取出h1bit
         val h264NalHeader: Byte
         val fuHeader: Byte
         if (indicatorType.toInt() == 28) {  // FU-A
-            fuHeader = rtpData[fuHeaderLen + 1]
-            val s = (rtpData[fuHeaderLen + 1] and 0x80.toByte())
-            val e = (rtpData[fuHeaderLen + 1] and 0x40.toByte())
+            fuHeader = rtpData[rtpHeaderLen + 1]
+            val s = (rtpData[rtpHeaderLen + 1] and 0x80.toByte())
+            val e = (rtpData[rtpHeaderLen + 1] and 0x40.toByte())
             if (e.toInt() == 64) {   // end of fu-a
                 //ZOLogUtil.d("RtpParser", "end of fu-a.....;;;");
-                val temp = ByteArray(rtpLen - (fuHeaderLen + 2))
-                System.arraycopy(rtpData, fuHeaderLen + 2, temp, 0, temp.size)
+                val temp = ByteArray(rtpLen - (rtpHeaderLen + 2))
+                System.arraycopy(rtpData, rtpHeaderLen + 2, temp, 0, temp.size)
                 writeData2Buffer(temp, temp.size)
                 if (h264Pos >= 0) {
                     h264Pos = -1
@@ -72,19 +80,19 @@ class RtpPacketDecode(width: Int, height: Int) {
                 writeData2Buffer(start_code, 4) // 写入H264起始码
                 h264NalHeader = (fuHeader and 0x1f or (nri.toInt() shl 5).toByte() or (f.toInt() shl 7).toByte())
                 writeData2Buffer(byteArrayOf(h264NalHeader), 1)
-                val temp = ByteArray(rtpLen - (fuHeaderLen + 2))
-                System.arraycopy(rtpData, fuHeaderLen + 2, temp, 0, temp.size) // 负载数据
+                val temp = ByteArray(rtpLen - (rtpHeaderLen + 2))
+                System.arraycopy(rtpData, rtpHeaderLen + 2, temp, 0, temp.size) // 负载数据
                 writeData2Buffer(temp, temp.size)
             } else {
-                val temp = ByteArray(rtpLen - (fuHeaderLen + 2))
-                System.arraycopy(rtpData, fuHeaderLen + 2, temp, 0, temp.size)
+                val temp = ByteArray(rtpLen - (rtpHeaderLen + 2))
+                System.arraycopy(rtpData, rtpHeaderLen + 2, temp, 0, temp.size)
                 writeData2Buffer(temp, temp.size)
             }
         } else { // nalu
             h264Pos = 0
             writeData2Buffer(start_code, 4)
-            val temp = ByteArray(rtpLen - fuHeaderLen)
-            System.arraycopy(rtpData, fuHeaderLen, temp, 0, temp.size)
+            val temp = ByteArray(rtpLen - rtpHeaderLen)
+            System.arraycopy(rtpData, rtpHeaderLen, temp, 0, temp.size)
             writeData2Buffer(temp, temp.size)
             if (h264Pos >= 0) {
                 h264Pos = -1

@@ -20,25 +20,25 @@ class RtpReceiver {
     private var rtpPacketDecode:RtpPacketDecode? = null
     private val RECEIVE_QUEUE_SIZE = 256
     private val receiveQueue = ArrayBlockingQueue<ByteArray>(RECEIVE_QUEUE_SIZE)
+    private val bufferSize = 64
 
     private val capacity = 512;
 
-    private val queue: PriorityBlockingQueue<RtpPacket> = PriorityBlockingQueue<RtpPacket>(capacity, object :Comparator<RtpPacket> {
-        override fun compare(o1: RtpPacket?, o2: RtpPacket?): Int {
-            return if (o1 != null && o2 != null) {
-                if (o1.ts == o2.ts) {
-                    if (o1.sn - o2.sn < RtpPacketDecode.SHORT_MAX/4*3)
-                        o1.sn - o2.sn
-                    else
-                        o2.sn - o1.sn
-                } else {
-                    o1.ts - o2.ts
-                }
+    private val queue: PriorityBlockingQueue<RtpPacket> = PriorityBlockingQueue<RtpPacket>(capacity
+    ) { o1, o2 ->
+        if (o1 != null && o2 != null) {
+            if (o1.ts == o2.ts) {
+                if (o1.sn - o2.sn < RtpPacketDecode.SHORT_MAX / 4 * 3)
+                    o1.sn - o2.sn
+                else
+                    o2.sn - o1.sn
             } else {
-                0
+                o1.ts - o2.ts
             }
+        } else {
+            0
         }
-    });
+    };
 
 
     private var isRunning = false
@@ -59,40 +59,17 @@ class RtpReceiver {
                 (data[0].toInt() == -128 &&
                 (data[1].toInt() == 96 || data[1].toInt() == -32) )
             ) {
-                /** 序列号 时间戳 信息 **/
-//                var seqNum: ByteBuffer = ByteBuffer.allocate(4)
-//                seqNum.put(data.copyOfRange(2, 4)) // 包序
-//                var sn = seqNum.getShort(0).toUShort().toInt()
-//                Log.i(TAG,"=========== seq = ${sn}===========")
-//
-//                var timeStamp: ByteBuffer = ByteBuffer.allocate(4)
-//                timeStamp.put(data.copyOfRange(4, 8)) // 时间戳
-//                var ts = timeStamp.getInt( 0)
-//                Log.i(TAG,"=========== TimeStamp = ${ts}===========")
-
-                /** 乱序检测 **/
-//                if(sn == 1)
-//                    lastSq = 0
-//                if( lastSq >= sn
-//                    && (lastSq - sn < RtpPacketDecode.SHORT_MAX/4*3)
-//                ) {
-//                    Log.e(TAG, "------------- error packet --------------")
-//
-//                    continue
-//                } else {
-//                    lastSq = sn
-//                }
-
+                /** 序列号 时间戳 信息 **/  /** 乱序检测 **/
                 var packet:RtpPacket = RtpPacket(data)
-                //controller.staticsMessage(packet.sn, packet.ts, (System.currentTimeMillis()%Int.MAX_VALUE).toInt(), packet.data.size)
+                controller.staticsMessage(packet.sn, packet.ts, (System.currentTimeMillis()%Int.MAX_VALUE).toInt(), packet.data.size)
                 //Log.e(TAG, " packet.sn = ${packet.sn}, packet.ts = ${packet.ts}, d.data.size = ${packet.data.size}")
                 queue.put(packet)
                 //controller.staticsMessage(sn, ts, (System.currentTimeMillis()%Int.MAX_VALUE).toInt(), data.size)
                 /** 解RTP包 **/
 
-                if (queue.size > 32) {
+                if (queue.size > bufferSize) {
                     var d = queue.poll()
-                    Log.e(TAG, " d.sn = ${d.sn}, d.ts = ${d.ts}, d.data.size = ${d.data.size}")
+                    //Log.e(TAG, " d.sn = ${d.sn}, d.ts = ${d.ts}, d.data.size = ${d.data.size}")
                     if(d.sn == 1)
                         lastSq = 0
                     if( lastSq >= d.sn
