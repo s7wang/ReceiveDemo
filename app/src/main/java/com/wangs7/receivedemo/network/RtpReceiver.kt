@@ -24,6 +24,7 @@ class RtpReceiver {
 
     private val capacity = 512;
 
+
     private val queue: PriorityBlockingQueue<RtpPacket> = PriorityBlockingQueue<RtpPacket>(capacity
     ) { o1, o2 ->
         if (o1 != null && o2 != null) {
@@ -63,10 +64,9 @@ class RtpReceiver {
                 var packet:RtpPacket = RtpPacket(data)
                 controller.staticsMessage(packet.sn, packet.ts, (System.currentTimeMillis()%Int.MAX_VALUE).toInt(), packet.data.size)
                 //Log.e(TAG, " packet.sn = ${packet.sn}, packet.ts = ${packet.ts}, d.data.size = ${packet.data.size}")
-                queue.put(packet)
+                queue.put(packet) /** 优先队列处理乱序 **/
                 //controller.staticsMessage(sn, ts, (System.currentTimeMillis()%Int.MAX_VALUE).toInt(), data.size)
                 /** 解RTP包 **/
-
                 if (queue.size > bufferSize) {
                     var d = queue.poll()
                     //Log.e(TAG, " d.sn = ${d.sn}, d.ts = ${d.ts}, d.data.size = ${d.data.size}")
@@ -76,11 +76,19 @@ class RtpReceiver {
                         && (lastSq - d.sn < RtpPacketDecode.SHORT_MAX/4*3)
                     ) {
                         Log.e(TAG, "------------- error packet --------------------------------------------------------------------------")
-                        //TODO 受到错误包
+
+                        if (rtpPacketDecode?.isBufferEmpty() == false) {
+                            //设置状态 等待I帧
+                            //发送请求I帧指令
+                        }
+                        rtpPacketDecode?.clearBuffer()
+                        continue
 
                     } else {
                         lastSq = d.sn
                     }
+                    controller.lossAnalyse(lastSq)
+
                     var rece = rtpPacketDecode?.rtp2h264(d.data, d.data.size)
                     /**可以对解码帧进行统计**/
                     /** 解码视频 **/
@@ -133,5 +141,9 @@ class RtpReceiver {
 
     companion object {
         val TAG: String = RtpReceiver::class.java.simpleName
+        const val NORMAL = 1
+        const val I_FRAME = 2
+        const val P_FRAME = 3
+
     }
 }

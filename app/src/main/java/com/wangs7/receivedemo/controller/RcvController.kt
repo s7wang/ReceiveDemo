@@ -4,11 +4,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
-import android.util.Log
-import com.wangs7.receivedemo.network.ReportPacketEncode
 import com.wangs7.receivedemo.network.SetDestAddress
-import com.wangs7.receivedemo.network.UdpSocket
-import java.net.InetAddress
 
 /**
  * @version:
@@ -38,6 +34,10 @@ class RcvController {
 
     }
 
+    fun lossAnalyse(sq:Int) {
+        statics.lossAnalyse(sq)
+    }
+
     init {
         staticThread.start()
 
@@ -51,7 +51,7 @@ class RcvController {
                 var arrTs:Int = bundle.get(ARR_TIMESTAMP) as Int
                 var len:Int = bundle.get(DATA_SIZE) as Int
 
-                statics.count(sq, ts, arrTs, len)
+                statics.count1(sq, ts, arrTs, len)
 
 
             }
